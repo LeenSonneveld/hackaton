@@ -1,0 +1,66 @@
+---
+title: "Explore Data"
+author: "Leen"
+date: '2022-06-04'
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    theme :
+      version: 5
+      bootswatch : minty
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE,
+                      warning = FALSE)
+source("00_packages.R")
+```
+
+```{r read_data}
+
+brfss_level_1 <- read_delim("data/BRFSS/brfss_level_1.csv", 
+                            delim = "|", escape_double = FALSE, trim_ws = TRUE) |> 
+  clean_names()
+
+brfss_level_2 <- read_delim("data/BRFSS/brfss_level_2.csv", 
+                            delim = "|", escape_double = FALSE, trim_ws = TRUE) |> 
+  clean_names()
+
+
+```
+
+
+# BRFSS level 1 {.tabset}
+
+## data
+
+```{r}
+brfss_level_1 |> 
+  slice_head(n  = 1000) |> 
+  reactable(sortable = TRUE, filterable = TRUE)
+```
+
+## skim
+```{r}
+skim(brfss_level_1)
+```
+
+# BRFSS level 2 {.tabset}
+
+## data
+
+```{r}
+brfss_level_2 |> 
+  slice_head(n  = 1000) |> 
+  reactable(sortable = TRUE, filterable = TRUE)
+```
+
+## skim
+```{r}
+skim(brfss_level_2)
+```
+
