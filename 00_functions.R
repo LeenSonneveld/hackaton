@@ -32,8 +32,8 @@ cleanup_brfss <- function(data){
     ) |>
     # in kolomnaam staan bijv.  y year of x childeren, hiervan alleen het getal
     mutate(
-      across(any_of(c("age_when_told_had_diabetes")), str_extract, "[:digit:]" ),
-      across(any_of(c("number_of_children_in_household")), str_extract, "[:digit:]" )
+      across(any_of(c("age_when_told_had_diabetes")), str_extract, "[:digit:]*" ),
+      across(any_of(c("number_of_children_in_household")), str_extract, "[:digit:]*" )
     ) |>
     # convert columns to numeric
     mutate(across(any_of(numeric_vars), as.numeric)) |>
