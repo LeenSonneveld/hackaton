@@ -2,7 +2,7 @@
 #' de reports directory
 
 source("00_packages.R")
-
+source("00_functions.R")
 
 
 # brfss level1 ------------------------------------------------------------
@@ -11,13 +11,12 @@ source("00_packages.R")
 brfss_level_1 <- read_delim("data/brfss/brfss_level_1.csv",
                             delim = "|",
                             escape_double = FALSE,
-                            trim_ws = TRUE) |>
-  clean_names()
+                            trim_ws = TRUE)
 
-brfss_level_1 %>%
-  #slice_sample(n = 100) |>
+brfss_level_1 |>
+  cleanup_brfss() |>
   create_report(
-    output_file = paste0("explore_brfss_level_1", format(Sys.time(), "%Y%m%d")),
+    output_file = paste0("explore_brfss_level_1", format(Sys.time(), "_%Y%m%d")),
     output_dir = "reports",
     report_title = "EDA Report - brffs_level_1",
     y = "general_health",
@@ -38,13 +37,14 @@ brfss_level_1 %>%
 brfss_level_2 <- read_delim("data/brfss/brfss_level_2.csv",
                             delim = "|",
                             escape_double = FALSE,
-                            trim_ws = TRUE) |>
-  clean_names()
+                            trim_ws = TRUE)
+
 
 brfss_level_2 |>
+  cleanup_brfss() |>
   #slice_sample(n = 100) |>
   create_report(
-    output_file = paste0("explore_brfss_level_2", format(Sys.time(), "%Y%m%d")),
+    output_file = paste0("explore_brfss_level_2", format(Sys.time(), "_%Y%m%d")),
     output_dir = "reports",
     report_title = "EDA Report - brffs_level_2",
     y = "general_health",
