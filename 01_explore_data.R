@@ -12,6 +12,8 @@ brfss_level_1 <- read_delim("data/brfss/brfss_level_1.csv",
                             delim = "|",
                             escape_double = FALSE,
                             trim_ws = TRUE)
+# tmp <- brfss_level_1 |>
+#   cleanup_brfss()
 
 brfss_level_1 |>
   cleanup_brfss() |>
@@ -29,6 +31,9 @@ brfss_level_1 |>
   )
 
 
+brfss_level_1 |>
+  cleanup_brfss() |>
+  qsave("data/brfss/brfss_level_1.qs")
 
 
 # brfss level2 ------------------------------------------------------------
@@ -38,6 +43,15 @@ brfss_level_2 <- read_delim("data/brfss/brfss_level_2.csv",
                             delim = "|",
                             escape_double = FALSE,
                             trim_ws = TRUE)
+
+tmp <- brfss_level_2 |>
+  cleanup_brfss()
+#
+# map(tmp, function(x) {
+#     if (is.factor(x)) {
+#       levels(x)
+#     }
+# })
 
 
 brfss_level_2 |>
@@ -56,3 +70,7 @@ brfss_level_2 |>
     )
   )
 
+
+brfss_level_2 |>
+  cleanup_brfss() |>
+  qsave("data/brfss/brfss_level_2.qs")

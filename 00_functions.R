@@ -18,6 +18,7 @@ cleanup_brfss <- function(data){
                  "Don’t know/Not sure",
                  "Don’t know/Not Sure",
                  "Don´t Know/Not Sure",
+                 "Don’t know/Not Sure",
                  "Don´t know/Not Sure",
                  "Not asked or missing",
                  "Not asked or Missing",
@@ -28,7 +29,8 @@ cleanup_brfss <- function(data){
   data |>
     clean_names() |>
     # set unknown/missing values to NA
-    mutate(across(where(is.character), ~if_else(. %in% na_values, NA_character_, .))
+    mutate(
+      across(where(is.character), ~if_else(. %in% na_values, NA_character_, .))
     ) |>
     # in kolomnaam staan bijv.  y year of x childeren, hiervan alleen het getal
     mutate(
@@ -37,6 +39,10 @@ cleanup_brfss <- function(data){
     ) |>
     # convert columns to numeric
     mutate(across(any_of(numeric_vars), as.numeric)) |>
-    mutate(across(where(is.character), ~as_factor(.)))
+    mutate(across(where(is.character), ~as_factor(.))) |>
+    # make ordered factor variable
+    mutate(
+      general_health = fct_relevel(general_health, c("Excellent", "Very good", "Good", "Fair", "Poor"))
+      )
 }
 
