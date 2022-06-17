@@ -17,6 +17,7 @@ count(train_data, general_health)
 # define recipe for classification of general health ----------------------
 
 gh_rec <- recipe(general_health ~ . , data = train_data) |>
+  update_role(id , new_role = "id") |>
   step_impute_median(all_numeric_predictors()) |>
   step_impute_mode(all_nominal_predictors()) |>
   step_unknown((all_nominal_predictors())) |>
@@ -95,8 +96,8 @@ accuracy(test_data_rf, truth = general_health, estimate = .pred_class)
 accuracy(test_data_dt, truth = general_health, estimate = .pred_class)
 
 
-precision(train_data, truth = general_health, estimate = .pred_class)
-recall(train_data, truth = general_health, estimate = .pred_class)
+precision(train_data, truth = general_health, estimate = .pred_rf)
+recall(train_data, truth = general_health, estimate = .pred_rf)
 
 
 
