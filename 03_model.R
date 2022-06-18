@@ -3,7 +3,7 @@ source("00_packages.R")
 
 # qs-files zijn al gecleaned bij de explore
 data <- qread("data/brfss/brfss_level_1.qs") |> filter(!is.na(general_health))
-#data <- qread("data/brfss/brfss_level_2.qs") |> filter(!is.na(general_health))
+data <- qread("data/brfss/brfss_level_2.qs") |> filter(!is.na(general_health))
 
 set.seed(123)
 data_split <- initial_split(data, strata = general_health)
@@ -40,15 +40,21 @@ baked_data <- bake(gh_rec, new_data = train_data)
 map_dbl(baked_data, ~sum(is.na(.)))
 
 
+# Define some classification engines
+
 # random forest classification
 rf_class <- rand_forest(trees = 1000) %>%
   set_mode("classification") %>%
   set_engine("ranger")
 
 # decision tree classification
-dt_class <- decision_tree(
-  mode ="classification",
-  engine = "rpart")
+dt_class <- decision_tree() |>
+  set_mode("classification") |>
+  set_engine("rpart")
+
+xgb_class <- boost_tree() |>
+  set_mode("classification") |>
+  set_engine("xgboost")
 
 # make workflow for general_health, using random forest
 base_wf <- workflow() |>
@@ -67,12 +73,18 @@ fit_dt_gh <- base_wf |>
   add_model(dt_class) |>
   fit(train_data)
 
+
+fit_xgb_gh <- base_wf |>
+  add_model(xgb_class) |>
+  fit(train_data)
+
 # Evaluate performance on train data ------
 
 # voeg de voorspellingen toe aan de trainingdata
 train_data <- train_data |>
   mutate(.pred_rf = predict(fit_rf_gh, train_data)[[".pred_class"]],
-         .pred_dt = predict(fit_dt_gh, train_data)[[".pred_class"]]
+         .pred_dt = predict(fit_dt_gh, train_data)[[".pred_class"]],
+         .pred_xgb = predict(fit_xgb_gh, train_data)[[".pred_class"]],
          )
 
 train_data |>
@@ -81,6 +93,7 @@ train_data |>
 
 accuracy(train_data, general_health, .pred_rf)
 accuracy(train_data, general_health, .pred_dt)
+accuracy(train_data, general_health, .pred_xgb)
 
 
 # voeg de RF voorspelling toe aan de testdata
@@ -91,9 +104,15 @@ test_data_rf |> select(general_health,  starts_with(".pred"))
 test_data_dt <- augment(fit_dt_gh, test_data)
 test_data_dt |> select(general_health,  starts_with(".pred"))
 
+# voeg de Decision Tree voorspelling toe aan de testdata
+test_data_xgb <- augment(fit_xgb_gh, test_data)
+test_data_xgb |> select(general_health,  starts_with(".pred"))
+
+
 # hoe goed is de accuracy op de testdata
 accuracy(test_data_rf, truth = general_health, estimate = .pred_class)
 accuracy(test_data_dt, truth = general_health, estimate = .pred_class)
+accuracy(test_data_xgb, truth = general_health, estimate = .pred_class)
 
 
 precision(train_data, truth = general_health, estimate = .pred_rf)
