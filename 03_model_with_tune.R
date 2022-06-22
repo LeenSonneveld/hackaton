@@ -16,7 +16,7 @@ set.seed(123)
 data_split <- initial_split(data, strata = general_health)
 train_data <- training(data_split)
 test_data <- testing(data_split)
-folds <- vfold_cv(train_data, v = 10, repeats = 1, strata = general_health)
+folds <- vfold_cv(train_data, v = 10, repeats = 3, strata = general_health)
 
 
 # define recipe for classification of general health ----------------------
@@ -34,17 +34,12 @@ gh_rec <- recipe(general_health ~ . , data = train_data) |>
   step_nzv(all_predictors()) |>
   step_normalize() |>
   # make dataset balanced
-  #step_smote(general_health) |>
+  step_upsample(general_health) |>
   prep()
 
 
-# define
-cart_spec <- decision_tree(
-  cost_complexity = tune(),
-  min_n = tune()) %>%
-  set_engine("rpart") %>%
-  set_mode("classification")
 
+# define
 rf_spec <- rand_forest(
   mtry = tune(),
   trees = tune(),
