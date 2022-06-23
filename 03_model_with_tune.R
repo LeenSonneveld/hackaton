@@ -44,13 +44,13 @@ rf_spec <- rand_forest(
   mtry = tune(),
   trees = tune(),
   min_n = tune()
-) %>%
-  set_mode("classification") %>%
+) |>
+  set_mode("classification") |>
   set_engine("ranger")
 
 
-rf_wf <- workflow() %>%
-  add_recipe(gh_rec) %>%
+rf_wf <- workflow() |>
+  add_recipe(gh_rec) |>
   add_model(rf_spec)
 
 
@@ -66,14 +66,14 @@ tune_res <- tune_grid(
 tune_res
 
 
-tune_res %>%
-  collect_metrics() %>%
-  filter(.metric == "roc_auc") %>%
-  select(mean, min_n, mtry, trees) %>%
+tune_res |>
+  collect_metrics()  |>
+  filter(.metric == "roc_auc")  |>
+  select(mean, min_n, mtry, trees)  |>
   pivot_longer(min_n:trees,
                values_to = "value",
                names_to = "parameter"
-  ) %>%
+  ) |>
   ggplot(aes(value, mean, color = parameter)) +
   geom_point(show.legend = FALSE) +
   facet_wrap(~parameter, scales = "free_x") +
@@ -95,16 +95,16 @@ final_rf_wf <- workflow() |>
   add_model(final_rf_model)
 
 # last_fit traint een model op alle trainingsdata en evalueert op de testdata
-final_res <- final_rf_wf %>%
+final_res <- final_rf_wf  |>
   last_fit(data_split)
 
 
-final_res %>%
+final_res |>
   collect_metrics()
 
 # confusion matrix
-final_res %>%
-  collect_predictions() %>%
+final_res |>
+  collect_predictions()  |>
   conf_mat(truth = general_health,
            estimate = .pred_class)
 
@@ -122,3 +122,51 @@ gh_wf_model <- final_res$.workflow[[1]]
 
 tmp <- augment(gh_wf_model, test_data)
 count(tmp, .pred_class)
+
+
+
+# Workflow set ----
+
+# start parallel
+doParallel::registerDoParallel()
+folds <- vfold_cv(train_data, v = 3, repeats = 1, strata = general_health)
+
+rf_spec <- rand_forest(
+  mtry = tune(),
+  trees = tune(),
+  min_n = tune()
+) |>
+  set_mode("classification")  |>
+  set_engine("ranger")
+
+
+dt_spec <- decision_tree(
+  cost_complexity = tune(),
+  min_n = tune()
+) |>
+  set_mode("classification")  |>
+  set_engine("rpart")
+
+
+# define worflows
+all_workflows <- workflow_set(
+  preproc =  list(
+    "gh_rec" = gh_rec),
+  models = list(
+    "random_forest" = rf_spec,
+    "decision_tree" = dt_spec
+  )
+)
+
+
+all_workflows
+
+all_workflows_tuned <- all_workflows |>
+  workflow_map(resamples = folds, grid = 5, verbose = TRUE)
+
+all_workflows_tuned
+
+
+rank_results(all_workflows_tuned, rank_metric = "roc_auc")
+
+autoplot(all_workflows_tuned, metric = "roc_auc")
