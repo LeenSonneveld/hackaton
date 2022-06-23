@@ -148,13 +148,22 @@ dt_spec <- decision_tree(
   set_engine("rpart")
 
 
+glm_spec <- logistic_reg(
+  penalty = tune(),
+  mixture = tune()
+) |>
+  set_mode("classification") |>
+  set_engine("glmnet")
+
+
 # define worflows
 all_workflows <- workflow_set(
   preproc =  list(
     "gh_rec" = gh_rec),
   models = list(
     "random_forest" = rf_spec,
-    "decision_tree" = dt_spec
+    "decision_tree" = dt_spec,
+    "glmnet" = glm_spec
   )
 )
 
@@ -170,3 +179,6 @@ all_workflows_tuned
 rank_results(all_workflows_tuned, rank_metric = "roc_auc")
 
 autoplot(all_workflows_tuned, metric = "roc_auc")
+
+autoplot(all_workflows_tuned, metric = "roc_auc", id = "gh_rec_glmnet")
+autoplot(all_workflows_tuned, metric = "roc_auc", id = "gh_rec_random_forest")
