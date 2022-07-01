@@ -3,7 +3,7 @@ source("00_packages.R")
 
 # qs-files zijn al gecleaned bij de explore
 data <- qread("data/brfss/brfss_level_1.qs") |> filter(!is.na(general_health))
-data <- qread("data/brfss/brfss_level_2.qs") |> filter(!is.na(general_health))
+#data <- qread("data/brfss/brfss_level_2.qs") |> filter(!is.na(general_health))
 
 set.seed(123)
 data_split <- initial_split(data, strata = general_health)

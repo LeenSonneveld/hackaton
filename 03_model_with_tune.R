@@ -16,7 +16,7 @@ set.seed(123)
 data_split <- initial_split(data, strata = general_health)
 train_data <- training(data_split)
 test_data <- testing(data_split)
-folds <- vfold_cv(train_data, v = 10, repeats = 3, strata = general_health)
+folds <- vfold_cv(train_data, v = 10, repeats = 1, strata = general_health)
 
 
 # define recipe for classification of general health ----------------------
