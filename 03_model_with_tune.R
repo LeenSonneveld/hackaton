@@ -1,30 +1,48 @@
 source("00_packages.R")
 
+doParallel::registerDoParallel()
 
 # qs-files zijn al gecleaned bij de explore
-data <- qread("data/brfss/brfss_level_1.qs") |> filter(!is.na(general_health))
-#data <- qread("data/brfss/brfss_level_2.qs") |> filter(!is.na(general_health))
+data <- qread("data/brfss/brfss_level_1.qs")
+data <- qread("data/brfss/brfss_level_2.qs")
+
+data <- data |>
+  filter(!is.na(general_health), general_health != "Don’t know/Not Sure")
 
 # maak 2 levels van general_heath
 data <- data |> mutate(
   general_health = case_when(
-    general_health %in% c("Poor", "Fair") ~ "slecht",
-    TRUE ~ "goed"
+    general_health %in% c("Poor", "Fair") ~ "ongezond",
+    TRUE ~ "gezond"
   ))
+
+
+count(data, general_health, sex_of_respondent)
+
+data$new = data$ko * 2
+data <- data |>
+  mutate(
+    new = k *2 + 1)
 
 set.seed(123)
 data_split <- initial_split(data, strata = general_health)
 train_data <- training(data_split)
 test_data <- testing(data_split)
-folds <- vfold_cv(train_data, v = 10, repeats = 1, strata = general_health)
+folds <- vfold_cv(train_data, v = 3, repeats = 1, strata = general_health)
 
 
 # define recipe for classification of general health ----------------------
 
+edu_levels <- c("1 No education", "2 Elementary","3 Some high school",
+                "4 High school graduate", "5 Some college or technical school" )
+
 gh_rec <- recipe(general_health ~ . , data = train_data) |>
   update_role(id , new_role = "id") |>
+  step_mutate(education_level = as.numeric(substr(education_level, 1, 1))) |>
   step_impute_median(all_numeric_predictors()) |>
   step_impute_mode(all_nominal_predictors()) |>
+  step_mutate(bmi = reported_weight_in_kilograms / reported_height_in_meters ^2) |>
+  step_ordinalscore() |>
   step_unknown((all_nominal_predictors())) |>
   step_other(all_nominal_predictors()) |>
   step_relevel(have_any_health_care_coverage, ref_level = "Yes") |>
@@ -38,8 +56,10 @@ gh_rec <- recipe(general_health ~ . , data = train_data) |>
   prep()
 
 
+# hoe ziet de data voor het model eruit? nog NA?
+baked_data <- bake(gh_rec, new_data = train_data)
 
-# define
+# define model specification
 rf_spec <- rand_forest(
   mtry = tune(),
   trees = tune(),
@@ -53,8 +73,17 @@ rf_wf <- workflow() |>
   add_recipe(gh_rec) |>
   add_model(rf_spec)
 
+# decision tree
+dt_spec <- decision_tree() |>
+  set_mode("classification") |>
+  set_engine("rpart")
 
-doParallel::registerDoParallel()
+
+
+
+dt_wf <- workflow() |>
+  add_recipe(gh_recipe) |>
+  add_model(dt_spec)
 
 set.seed(345)
 tune_res <- tune_grid(
@@ -128,7 +157,6 @@ count(tmp, .pred_class)
 # Workflow set ----
 
 # start parallel
-doParallel::registerDoParallel()
 folds <- vfold_cv(train_data, v = 3, repeats = 1, strata = general_health)
 
 rf_spec <- rand_forest(
